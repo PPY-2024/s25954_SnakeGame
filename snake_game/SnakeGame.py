@@ -1,11 +1,35 @@
 import pygame as pg
 from random import randrange
 
+import pymongo as pymongo
+
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["snake_game"]
+collection = db["player_scores"]
+
 pg.font.init()
 
 MIN_SIZE = 5
 MAX_SIZE = 25
 WINDOW = 500
+
+
+def get_player_score(player_name):
+    player = collection.find_one({"name": player_name})
+    if player:
+        return player["best_score"]
+    else:
+        return 0
+
+
+def update_player_score(player_name, player_score):
+    player = collection.find_one({"name": player_name})
+    if player:
+        if player_score > player["best_score"]:
+            collection.update_one({"name": player_name}, {"$set": {"best_score": player_score}})
+    else:
+        collection.insert_one({"name": player_name, "best_score": player_score})
+
 
 field_size = 0
 user_name = ""
@@ -49,6 +73,7 @@ def initialize_with_atr(input_field_size, input_user_name, input_snake_speed):
             break
 """
 
+
 def get_random_position():
     global RANGE
     return [randrange(*RANGE), randrange(*RANGE)]
@@ -84,6 +109,8 @@ def show_score(font_color, font_style, size, input_user_name):
 def lost_score(font_color, font_style, size):
     global score, record_score, snake, food, segments, length, snake_dir
 
+    update_player_score(user_name, score)
+
     if record_score < score:
         record_score = score
 
@@ -107,6 +134,8 @@ def game(input_user_name):
         snake, snake_dir, snake_speed, food, font, \
         color, clock, dirs, WINDOW, MAX_SIZE, \
         MIN_SIZE, TILE_SIZE, RANGE, get_random_position
+
+    record_score = get_player_score(user_name)
 
     while True:
         for event in pg.event.get():
@@ -146,5 +175,5 @@ def game(input_user_name):
         clock.tick(snake_speed)
 
 
-#initialize()
+# initialize()
 game(user_name)
