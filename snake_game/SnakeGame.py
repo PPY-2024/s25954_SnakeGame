@@ -1,5 +1,12 @@
-import pygame as pg
 from random import randrange
+#import os
+import pygame as pg
+from mongodb import *
+
+import tkinter as tk
+from tkinter import simpledialog
+
+# from mongodb import update_player_score, get_player_data
 
 pg.font.init()
 
@@ -7,47 +14,16 @@ MIN_SIZE = 5
 MAX_SIZE = 25
 WINDOW = 500
 
-field_size = 0
-user_name = ""
-snake_speed = 0
+root = tk.Tk()
+root.withdraw()
 
-while field_size < MIN_SIZE or field_size > MAX_SIZE:
-    field_size = int(input(f"Set field size (between {MIN_SIZE}x{MIN_SIZE} and {MAX_SIZE}x{MAX_SIZE}): "))
-
-user_name = input("Your name: ")
-while snake_speed < 1 or snake_speed > 10:
-    snake_speed = int(input("Set snake speed: "))
+field_size = int(simpledialog.askinteger("Input", f"Set field size (between {MIN_SIZE}x{MIN_SIZE} and {MAX_SIZE}x{MAX_SIZE}):", minvalue=MIN_SIZE, maxvalue=MAX_SIZE))
+user_name = simpledialog.askstring("Input", "Your name:")
+snake_speed = int(simpledialog.askinteger("Input", "Set snake speed (1-10):", minvalue=1, maxvalue=10))
 
 TILE_SIZE = WINDOW // field_size
 RANGE = (TILE_SIZE // 2, WINDOW - TILE_SIZE // 2, TILE_SIZE)
 
-"""
-TILE_SIZE = 0
-RANGE = [0, 1]
-
-
-def initialize():
-    global field_size, user_name, snake_speed, TILE_SIZE, RANGE
-
-
-#
-
-def initialize_with_atr(input_field_size, input_user_name, input_snake_speed):
-    global field_size, user_name, snake_speed, WINDOW, RANGE, TILE_SIZE
-
-    while True:
-        if input_field_size < MIN_SIZE or input_field_size > MAX_SIZE:
-            print("field size out of allowed range")
-            return 0
-        else:
-            field_size = input_field_size
-            user_name = input_user_name
-            snake_speed = input_snake_speed
-
-            TILE_SIZE = WINDOW // field_size
-            RANGE = (TILE_SIZE // 2, WINDOW - TILE_SIZE // 2, TILE_SIZE)
-            break
-"""
 
 def get_random_position():
     global RANGE
@@ -72,20 +48,32 @@ font_size = 24
 font = "Alias"
 
 
-def show_score(font_color, font_style, size, input_user_name):
+def show_score(font_color, font_style, size):
+    global score, record_score, user_name
+
+    player_data = get_player_data(user_name)
+    if player_data:
+        record_score = player_data.get('record', 0)
+    else:
+        record_score = 0
+
     score_font = pg.font.SysFont(font_style, size)
     score_surface = score_font.render(
-        input_user_name + "'s Score : " + str(score) + " / Best score: " + str(record_score),
+        user_name + "'s Score : " + str(score) + " / Best score: " + str(record_score),
         True, font_color)
     score_rect = score_surface.get_rect()
     screen.blit(score_surface, score_rect)
 
 
 def lost_score(font_color, font_style, size):
-    global score, record_score, snake, food, segments, length, snake_dir
+    global user_name, score, record_score, snake, food, segments, length, snake_dir
+
+
+
 
     if record_score < score:
         record_score = score
+        update_player_score(user_name, score)
 
     lost_font = pg.font.SysFont(font_style, size)
     lost_surface = lost_font.render("You lost. Your score: " + str(score) + "\n" + "Best score: " + str(record_score),
@@ -138,7 +126,7 @@ def game(input_user_name):
         pg.draw.rect(screen, 'red', food)
         [pg.draw.rect(screen, 'green', segment) for segment in segments]
 
-        show_score(color, font, font_size, input_user_name)
+        show_score(color, font, font_size)
         snake.move_ip(snake_dir)
         segments.append(snake.copy())
         segments = segments[-length:]
@@ -148,3 +136,4 @@ def game(input_user_name):
 
 #initialize()
 game(user_name)
+
