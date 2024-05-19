@@ -1,10 +1,6 @@
-import pygame as pg
 import unittest
 from unittest.mock import patch
 
-import pytest
-import io
-import sys
 
 from snake_game.SnakeGame import *
 class TestSnakeGame(unittest.TestCase):
